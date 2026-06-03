@@ -1,5 +1,3 @@
-# export PYTHONPATH="/home/x_lishu/matching/colla_gluefactory/glue-factory-2d3d-match:$PYTHONPATH"
-
 import torch
 from gluefactory.models import get_model
 

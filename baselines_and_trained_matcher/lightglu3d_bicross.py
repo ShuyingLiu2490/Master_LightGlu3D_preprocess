@@ -9,9 +9,9 @@ from omegaconf import OmegaConf
 from torch import nn
 import random
 
-from ...settings import DATA_PATH
-from ..utils.losses import NLLLoss
-from ..utils.metrics import matcher_metrics
+from gluefactory.settings import DATA_PATH
+# from ..utils.losses import NLLLoss
+# from ..utils.metrics import matcher_metrics
 
 FLASH_AVAILABLE = hasattr(F, "scaled_dot_product_attention")
 
@@ -122,19 +122,20 @@ class TokenConfidence(nn.Module):
         )
 
     def loss(self, desc0, desc1, la_now, la_final):
-        logit0 = self.token[0](desc0.detach()).squeeze(-1)
-        logit1 = self.token[0](desc1.detach()).squeeze(-1)
-        la_now, la_final = la_now.detach(), la_final.detach()
-        correct0 = (
-            la_final[:, :-1, :].max(-1).indices == la_now[:, :-1, :].max(-1).indices
-        )
-        correct1 = (
-            la_final[:, :, :-1].max(-2).indices == la_now[:, :, :-1].max(-2).indices
-        )
-        return (
-            self.loss_fn(logit0, correct0.float()).mean(-1)
-            + self.loss_fn(logit1, correct1.float()).mean(-1)
-        ) / 2.0
+        pass
+        # logit0 = self.token[0](desc0.detach()).squeeze(-1)
+        # logit1 = self.token[0](desc1.detach()).squeeze(-1)
+        # la_now, la_final = la_now.detach(), la_final.detach()
+        # correct0 = (
+        #     la_final[:, :-1, :].max(-1).indices == la_now[:, :-1, :].max(-1).indices
+        # )
+        # correct1 = (
+        #     la_final[:, :, :-1].max(-2).indices == la_now[:, :, :-1].max(-2).indices
+        # )
+        # return (
+        #     self.loss_fn(logit0, correct0.float()).mean(-1)
+        #     + self.loss_fn(logit1, correct1.float()).mean(-1)
+        # ) / 2.0
 
 
 class Attention(nn.Module):
@@ -455,7 +456,8 @@ class LightGlu3D(nn.Module):
             [TokenConfidence(d) for _ in range(n - 1)]
         )
 
-        self.loss_fn = NLLLoss(conf.loss)
+        # self.loss_fn = NLLLoss(conf.loss)
+        self.loss_fn = None
 
         state_dict = None
         is_restoring = conf.get("is_restoring", False)
@@ -694,80 +696,80 @@ class LightGlu3D(nn.Module):
             return self.pruning_keypoint_thresholds[device.type]
 
     def loss(self, pred, data):
+        pass
+        # if "gt_assignment" not in data and "gt_matches0" in data:
+        #     m, n = data["gt_matches0"].shape[-1], data["gt_matches1"].shape[-1]
+        #     batch_size = data["gt_matches0"].shape[0]
+        #     device = data["gt_matches0"].device
 
-        if "gt_assignment" not in data and "gt_matches0" in data:
-            m, n = data["gt_matches0"].shape[-1], data["gt_matches1"].shape[-1]
-            batch_size = data["gt_matches0"].shape[0]
-            device = data["gt_matches0"].device
+        #     gt_assignment = torch.zeros((batch_size, m, n), device=device)
+        #     for b in range(batch_size):
+        #         m0 = data["gt_matches0"][b]
+        #         # valid_mask = m0 != -1
+        #         valid_mask = m0 >= 0 # for soft threshold
+        #         if valid_mask.any():
+        #             indices_2d = torch.where(valid_mask)[0]
+        #             indices_3d = m0[valid_mask].long()
+        #             gt_assignment[b, indices_2d, indices_3d] = 1.0
+        #     data["gt_assignment"] = gt_assignment
 
-            gt_assignment = torch.zeros((batch_size, m, n), device=device)
-            for b in range(batch_size):
-                m0 = data["gt_matches0"][b]
-                # valid_mask = m0 != -1
-                valid_mask = m0 >= 0 # for soft threshold
-                if valid_mask.any():
-                    indices_2d = torch.where(valid_mask)[0]
-                    indices_3d = m0[valid_mask].long()
-                    gt_assignment[b, indices_2d, indices_3d] = 1.0
-            data["gt_assignment"] = gt_assignment
-
-         # Instruct NLLLOSS to zero the gradient at point -2.
-        if "gt_weights0" not in data:
-            data["gt_weights0"] = (data["gt_matches0"] != -2).float()
-        if "gt_weights1" not in data:
-            data["gt_weights1"] = (data["gt_matches1"] != -2).float()
+        #  # Instruct NLLLOSS to zero the gradient at point -2.
+        # if "gt_weights0" not in data:
+        #     data["gt_weights0"] = (data["gt_matches0"] != -2).float()
+        # if "gt_weights1" not in data:
+        #     data["gt_weights1"] = (data["gt_matches1"] != -2).float()
             
-        mask0 = data.get("mask0", None)
-        mask1 = data.get("mask1", None)
-        def loss_params(pred, i):
-            la, _ = self.log_assignment[i](
-                pred["ref_descriptors0"][:, i], pred["ref_descriptors1"][:, i], mask0, mask1
-            )
-            return {
-                "log_assignment": la,
-            }
+        # mask0 = data.get("mask0", None)
+        # mask1 = data.get("mask1", None)
+        # def loss_params(pred, i):
+        #     la, _ = self.log_assignment[i](
+        #         pred["ref_descriptors0"][:, i], pred["ref_descriptors1"][:, i], mask0, mask1
+        #     )
+        #     return {
+        #         "log_assignment": la,
+        #     }
 
-        sum_weights = 1.0
-        nll, gt_weights, loss_metrics = self.loss_fn(loss_params(pred, -1), data)
-        N = pred["ref_descriptors0"].shape[1]
-        losses = {"total": nll, "last": nll.clone().detach(), **loss_metrics}
+        # sum_weights = 1.0
+        # nll, gt_weights, loss_metrics = self.loss_fn(loss_params(pred, -1), data)
+        # N = pred["ref_descriptors0"].shape[1]
+        # losses = {"total": nll, "last": nll.clone().detach(), **loss_metrics}
 
-        if self.training:
-            losses["confidence"] = 0.0
+        # if self.training:
+        #     losses["confidence"] = 0.0
 
-        # B = pred['log_assignment'].shape[0]
-        losses["row_norm"] = pred["log_assignment"].exp()[:, :-1].sum(2).mean(1)
-        for i in range(N - 1):
-            params_i = loss_params(pred, i)
-            nll, _, _ = self.loss_fn(params_i, data, weights=gt_weights)
+        # # B = pred['log_assignment'].shape[0]
+        # losses["row_norm"] = pred["log_assignment"].exp()[:, :-1].sum(2).mean(1)
+        # for i in range(N - 1):
+        #     params_i = loss_params(pred, i)
+        #     nll, _, _ = self.loss_fn(params_i, data, weights=gt_weights)
 
-            if self.conf.loss.gamma > 0.0:
-                weight = self.conf.loss.gamma ** (N - i - 1)
-            else:
-                weight = i + 1
-            sum_weights += weight
-            losses["total"] = losses["total"] + nll * weight
+        #     if self.conf.loss.gamma > 0.0:
+        #         weight = self.conf.loss.gamma ** (N - i - 1)
+        #     else:
+        #         weight = i + 1
+        #     sum_weights += weight
+        #     losses["total"] = losses["total"] + nll * weight
 
-            losses["confidence"] += self.token_confidence[i].loss(
-                pred["ref_descriptors0"][:, i],
-                pred["ref_descriptors1"][:, i],
-                params_i["log_assignment"],
-                pred["log_assignment"],
-            ) / (N - 1)
+        #     losses["confidence"] += self.token_confidence[i].loss(
+        #         pred["ref_descriptors0"][:, i],
+        #         pred["ref_descriptors1"][:, i],
+        #         params_i["log_assignment"],
+        #         pred["log_assignment"],
+        #     ) / (N - 1)
 
-            del params_i
-        losses["total"] /= sum_weights
+        #     del params_i
+        # losses["total"] /= sum_weights
 
-        # confidences
-        if self.training:
-            losses["total"] = losses["total"] + losses["confidence"]
+        # # confidences
+        # if self.training:
+        #     losses["total"] = losses["total"] + losses["confidence"]
 
-        if not self.training:
-            # add metrics
-            metrics = matcher_metrics(pred, data)
-        else:
-            metrics = {}
-        return losses, metrics
+        # if not self.training:
+        #     # add metrics
+        #     metrics = matcher_metrics(pred, data)
+        # else:
+        #     metrics = {}
+        # return losses, metrics
 
 
 __main_model__ = LightGlu3D

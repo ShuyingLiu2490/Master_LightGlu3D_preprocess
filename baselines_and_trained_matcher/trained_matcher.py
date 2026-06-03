@@ -1,11 +1,8 @@
-# export PYTHONPATH="/home/x_lishu/matching/colla_gluefactory/glue-factory-2d3d-match:$PYTHONPATH"
-
-import numpy as np
 import torch
 import logging
-from gluefactory.models.matchers.lightglu3d_bicross import LightGlu3D
+import numpy as np
+from .lightglu3d_bicross import LightGlu3D
 
-# Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
