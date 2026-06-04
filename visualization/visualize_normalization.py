@@ -1,12 +1,3 @@
-# From the argument get the dataset path, preprocess path, scene number
-# Process (for each scene):
-# 1. get one query image (random)
-#    then get the most similar reference image (from most_similar_pair.txt)
-# 2. get the original sfm model
-#    then get the visible 3d points for this query image (from covisibility_results.pkl)
-# 3. use the normalization methods (provided) to deal with the visible 3d points
-#    then visualize it in html file
-
 import argparse
 import logging
 import pickle
@@ -19,8 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from hloc.utils import viz_3d
 
-# Setup Logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def normalize_keypoints(
@@ -49,12 +39,12 @@ def normalize_3d_with_quantile(
     scale = dist.max(dim=-1, keepdim=True).values / 2.0
     scale = torch.clamp(scale, min=1e-6)
 
-    # 1. Base normalization
+    # Base normalization
     kpts_norm_base = (kpts - shift) / scale
     norm_upper_base = (upper_bound - shift) / scale
     norm_lower_base = (lower_bound - shift) / scale
 
-    # 2. Pull back
+    # Pull back
     pull_factor = (2 * quantile_value - 1)
     kpts_norm_pulled = kpts_norm_base * pull_factor
     norm_upper_pulled = norm_upper_base * pull_factor
@@ -261,7 +251,7 @@ def main():
         template="plotly_dark" 
     )
 
-    output_html = Path(f"normalization_check_3views_{scene}_2.html")
+    output_html = Path(f"normalization_check_3views_{scene}.html")
     fig.write_html(str(output_html))
     logger.info(f"HTML Visualization successfully saved to {output_html}")
 

@@ -539,3 +539,40 @@ Each block is in this format: (0.25m, 2◦) / (0.05m, 5◦) / (5.00m, 10◦).
 | LightGlu3D (k=0.5, λ=0.1)      |            |      |       |
 
 
+## Visualization
+
+### Quantile normalization
+
+For a random query in one scene, visualize how the normalization works on the visible points.
+
+```
+python -m visualization.visualize_normalization \
+  --covisibility_dir [YOUR_MEGADEPTH_OUTPUT_FOLDER]/covisibility \
+  --query_dir [YOUR_MEGADEPTH_OUTPUT_FOLDER]/query \
+  --sfm_dir [YOUR_MEGADEPTH_OUTPUT_FOLDER]/triangulation \
+  --scene [SCENE_ID]
+```
+
+
+### Matching performance
+
+```
+python -m visualization.visualize_matches \
+ --dataset [YOUR_MEGADPETH_FOLDER]/Undistorted_SfM \
+ --covisibility_dir [YOUR_MEGADEPTH_OUTPUT_FOLDER]/covisibility \
+ --query_dir  [YOUR_MEGADEPTH_OUTPUT_FOLDER]/query \
+ --sfm_dir  [YOUR_MEGADEPTH_OUTPUT_FOLDER]/triangulation \
+ --depth_dir [YOUR_MEGADPETH_FOLDER]/depth_undistorted \
+ --scene [SCENE_ID] \
+ --method TRAIN \
+ --checkpoint [YOUR_TRAINED_WEIGHTS](.tar) \
+ --filter_threshold [YOUR_LAMBDA]
+```
+
+#### The examples
+
+The matching performance of two examples:
+
+One example in 0015:
+
+One example in 0022:
